@@ -231,12 +231,14 @@ class Command(BaseCommand):
                 transaction.commit(using=self.db)
 
         sys.stdout.write("Emitting post sync signal.\n")
-        emit_post_sync_signal(
-            created_models,
-            self.verbosity,
-            self.interactive,
-            self.db
-        )
+
+        if created_models:
+            emit_post_sync_signal(
+                created_models,
+                self.verbosity,
+                self.interactive,
+                self.db
+            )
         sys.stdout.write("Running loaddata for initial_data fixtures.\n")
         call_command(
             "loaddata",
@@ -244,6 +246,7 @@ class Command(BaseCommand):
             verbosity=self.verbosity,
             database=self.db
         )
+        transaction.commit()
     
     def seed_migrations(self, stop_at=None):
         # @@@ the command-line interface needs to be re-thinked
@@ -309,4 +312,7 @@ class Command(BaseCommand):
         
         if self.do_seed:
             self.seed_migrations()
+
+        if transaction.is_dirty():
+            transaction.commit()
 
